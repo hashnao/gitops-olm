@@ -1,17 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: in-cluster-install-compliance-scans
+  name: cluster-scoped-grafana-operator
   namespace: openshift-gitops
 spec:
   destination:
-    namespace: in-cluster
     server: 'https://kubernetes.default.svc'
   info:
     - name: Description
-      value: Deploy and configure the Compliance Scan Operator
+      value: Deploy Grafana Operator on cluster-scoped basis
   project: default
   source:
-    path: charts/compliance-operator-full-stack
-    repoURL: 'https://github.com/tjungbauer/helm-charts'
+    path: charts/grafana
+    repoURL: 'https://github.com/hashnao/gitops-olm.git'
     targetRevision: main
