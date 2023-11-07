@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cluster-scoped-grafana-operator
-  namespace: openshift-gitops
+  name: namespace-scoped-grafana-operator
+  namespace: grafana-operator
 spec:
   destination:
     server: 'https://kubernetes.default.svc'
   info:
     - name: Description
-      value: Deploy Grafana Operator on cluster-scoped basis
+      value: Deploy Grafana Operator on namespace-scoped basis
   project: default
   source:
     path: charts/grafana
