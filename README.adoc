@@ -1,0 +1,117 @@
+:toc: auto
+:imagesdir: images
+
+= Operator Installation with GitOps Operator
+
+* GitOps Operator を用いて Cluster-scoped な <<OpenShift Pipelines Operator>> をインストールする
+* GitOps Operator を用いて Namespace-scoped な <<Grafana Operator>> をインストールする
+
+NOTE: Cluster-scoped でインストールする Operator は全ての Namespace で利用することができ、Namespace-scoped は特定の Namespace に Operator をインストールすることで利用できる Namespace を制限します。
+詳細は https://sdk.operatorframework.io/docs/building-operators/golang/operator-scope/[Operators Scope] を参照下さい。
+
+== Prerequisites
+
+* 製品ガイドに従い https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gitops.html[OpenShift Pipelines Operator] をインストールする
+
+== OpenShift Pipelines Operator
+
+. cluster-scoped な権限を GitOps Operator に設定する
++
+----
+oc edit subscriptions.operators.coreos.com -n openshift-operators openshift-gitops-operator
+----
+.設定例
++
+----
+spec.
+ config:
+    env:
+   - name: ARGOCD_CLUSTER_CONFIG_NAMESPACES
+     value: openshift-gitops, openshift-operators
+----
+NOTE: GitOps Operator に Operator をインストールさせる際は Operator をインストールするための `Subscription` など cluster-scoped なリソースを 
+GitOps Operator が作成できるように権限を与える必要があります。
+`Subscription (spec.config.env)` に https://docs.openshift.com/gitops/1.10/declarative_clusterconfig/configuring-an-openshift-cluster-by-deploying-an-application-with-cluster-configurations.html#using-argo-cd-instance-to-manage-cluster-scoped-resourcesconfiguring-an-openshift-cluster-by-deploying-an-application-with-cluster-configurations[ARGOCD_CLUSTER_CONFIG_NAMESPACES] 変数を設定し、value に Operator をインストールする　Namespace を `,` 区切りで指定します。
+
+. Application CR を作成する
++
+----
+oc create -f https://raw.githubusercontent.com/hashnao/gitops-olm/main/argo/pipelines/app.yaml
+----
+NOTE: Application CR に Git Repository の URL (https://github.com/hashnao/gitops-olm/tree/main/charts) を定義し、 Git Repository に OpenShift Pipelines Operator をインストールするための `Subscription` リソースを配置しています。
+OpenShift Pipelines Operator の `Subscription` リソースの詳細は https://docs.openshift.com/pipelines/1.11/install_config/installing-pipelines.html#op-installing-pipelines-operator-using-the-cli_installing-pipelines[OpenShift Pipelines Operator] を参照します。
+Application CR を作成後、自動で Git Repository と同期させるために https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/[Automated Sync Policy] を設定しています。
+
+. Application のステータスが同期 (Synced) であることを確認する
++
+----
+oc -n openshift-gitops get application cluster-scoped-openshift-pipelines-operator
+----
+.Example Output
++
+----
+NAME                                          SYNC STATUS   HEALTH STATUS
+cluster-scoped-openshift-pipelines-operator   Synced        Healthy
+----
+NOTE: Argo CD の Web Console を Web ブラウザで開くと `Subscription` や `InstallPlan` が作成されることを確認することができます。
++
+image::argo_console_pipeline.png[]
+NOTE: Argo CD Web Console の URL は次のコマンドで取得することができます。
++
+----
+$ oc -n openshift-gitops get route openshift-gitops-server -o jsonpath='{.spec.host}'
+openshift-gitops-server-openshift-gitops.apps.rosa.rosa-l4mrg.eeha.p3.openshiftapps.com
+----
+
+. Operator がインストールされていることを確認する
++ 
+----
+oc -n openshift-operators get csv -l operators.coreos.com/openshift-gitops-operator.openshift-operators
+----
+.Example Output
++
+----
+NAME                                DISPLAY                    VERSION   REPLACES                            PHASE
+openshift-gitops-operator.v1.10.1   Red Hat OpenShift GitOps   1.10.1    openshift-gitops-operator.v1.10.0   Succeeded
+----
+
+== Grafana Operator
+
+. Application CR を作成する
++
+----
+oc create -f https://raw.githubusercontent.com/hashnao/gitops-olm/main/argo/grafana/app.yaml
+----
+
+. Application のステータスが同期 (Synced) であることを確認する
++
+----
+oc -n openshift-gitops get application namespace-scoped-grafana-operator
+----
+.Example Output
++
+----
+NAME                                SYNC STATUS   HEALTH STATUS
+namespace-scoped-grafana-operator   Synced        He
+----
+NOTE: Argo CD の Web Console を参照すると `Subscription` や `InstallPlan` が作成されることを確認することができます。
++
+image::argo_console_grafana.png[]
+
+. Operator がインストールされていることを確認する
++ 
+----
+oc -n grafana-operator get csv -l operators.coreos.com/grafana-operator.grafana-operator
+----
+.Example Output
++
+----
+NAME                       DISPLAY            VERSION   REPLACES                   PHASE
+grafana-operator.v4.10.1   Grafana Operator   4.10.1    grafana-operator.v4.10.0   Succeeded
+----
+
+== Reference
+
+* https://docs.openshift.com/gitops/1.10/declarative_clusterconfig/configuring-an-openshift-cluster-by-deploying-an-application-with-cluster-configurations.html#gitops-installing-olm-operators-using-gitops_configuring-an-openshift-cluster-by-deploying-an-application-with-cluster-configurations
+* https://cloud.redhat.com/blog/operator-installation-with-argo-cd/gitops
+* https://piotrminkowski.com/2023/05/05/manage-kubernetes-operators-with-argocd/
