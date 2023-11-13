@@ -13,6 +13,6 @@ spec:
   source:
     path: kustomize-namespace-config
     repoURL: 'https://github.com/hashnao/gitops-olm.git'
-    targetRevision: main
+    targetRevision: 3-namespace
   syncPolicy:
     automated: {}
