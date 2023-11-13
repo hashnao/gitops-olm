@@ -11,7 +11,7 @@ spec:
       value: Create namespaces
   project: default
   source:
-    path: kustomize-namespace-config
+    path: kustomize-namespace-config/teams
     repoURL: 'https://github.com/hashnao/gitops-olm.git'
     targetRevision: 3-namespace
   syncPolicy:
