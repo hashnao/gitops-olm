@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: namespace-management
+  namespace: openshift-gitops
+spec:
+  generators:
+  - pullRequest:
+      github:
+        owner: hashnao
+        repo: gitops-olm
+        labels:
+        - preview
+      requeueAfterSeconds: 300
+  template:
+    metadata:
+      name: 'namespace-{{branch}}-{{number}}'
+    spec:
+      source:
+        path: kustomize-namespace-config/teams
+        repoURL: 'https://github.com/hashnao/gitops-olm.git'
+        targetRevision: '{{head_sha}}'
+      project: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+      destination:
+        server: https://kubernetes.default.svc
