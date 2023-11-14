@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: namespace-management
+  namespace: openshift-gitops
+spec:
+  destination:
+    server: 'https://kubernetes.default.svc'
+  info:
+    - name: Description
+      value: Create namespaces
+  project: default
+  source:
+    path: kustomize-namespace-config/teams
+    repoURL: 'https://github.com/hashnao/gitops-olm.git'
+    targetRevision: 3-namespace
+  syncPolicy:
+    automated: {}
